@@ -12,10 +12,10 @@ mod support;
 
 fn main() {
     // building the display, ie. the main object
-    let mut events_loop = glutin::EventsLoop::new();
-    let wb = glutin::WindowBuilder::new();
+    let mut event_loop = glutin::event_loop::EventLoop::new();
+    let wb = glutin::window::WindowBuilder::new();
     let cb = glutin::ContextBuilder::new().with_vsync(true);
-    let display = glium::Display::new(wb, cb, &events_loop).unwrap();
+    let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
     // building a texture with "OpenGL" drawn on it
     let image = image::load(Cursor::new(&include_bytes!("../tests/fixture/opengl.png")[..]),
@@ -34,7 +34,7 @@ fn main() {
 
         implement_vertex!(Vertex, position, tex_coords);
 
-        glium::VertexBuffer::new(&display, 
+        glium::VertexBuffer::new(&display,
             &[
                 Vertex { position: [-1.0, -1.0], tex_coords: [0.0, 0.0] },
                 Vertex { position: [-1.0,  1.0], tex_coords: [0.0, 1.0] },
@@ -79,7 +79,7 @@ fn main() {
             "
         },
 
-        110 => {  
+        110 => {
             vertex: "
                 #version 110
 
@@ -107,7 +107,7 @@ fn main() {
             ",
         },
 
-        100 => {  
+        100 => {
             vertex: "
                 #version 100
 
@@ -135,9 +135,9 @@ fn main() {
             ",
         },
     ).unwrap();
-    
+
     // the main loop
-    support::start_loop(|| {
+    support::start_loop(&display, || {
         // building the uniforms
         let uniforms = uniform! {
             matrix: [
@@ -157,10 +157,10 @@ fn main() {
 
         // polling and handling the events received by the window
         let mut action = support::Action::Continue;
-        events_loop.poll_events(|event| {
+        event_loop.run(|event, _, _| {
             match event {
-                glutin::Event::WindowEvent { event, .. } => match event {
-                    glutin::WindowEvent::CloseRequested => action = support::Action::Stop,
+                glutin::event::Event::WindowEvent { event, .. } => match event {
+                    glutin::event::WindowEvent::CloseRequested => action = support::Action::Stop,
                     _ => ()
                 },
                 _ => (),

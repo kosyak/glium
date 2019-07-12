@@ -177,6 +177,7 @@ pub fn sync_depth(ctxt: &mut CommandContext, depth: &Depth) -> Result<(), DrawEr
                 if ctxt.version >= &Version(Api::Gl, 3, 0) || ctxt.extensions.gl_arb_depth_clamp ||
                    ctxt.extensions.gl_nv_depth_clamp
                 {
+                    println!("DISABLE gl::DEPTH_CLAMP");
                     unsafe { ctxt.gl.Disable(gl::DEPTH_CLAMP) };
                     *near = false;
                     *far = false;
@@ -202,6 +203,7 @@ pub fn sync_depth(ctxt: &mut CommandContext, depth: &Depth) -> Result<(), DrawEr
 
             (DepthClamp::ClampNear, &mut true, far) => {
                 if ctxt.extensions.gl_amd_depth_clamp_separate {
+                    println!("DISABLE gl::DEPTH_CLAMP_FAR_AMD");
                     unsafe { ctxt.gl.Disable(gl::DEPTH_CLAMP_FAR_AMD) };
                     *far = false;
                 } else {
@@ -213,6 +215,7 @@ pub fn sync_depth(ctxt: &mut CommandContext, depth: &Depth) -> Result<(), DrawEr
             (DepthClamp::ClampNear, near @ &mut false, far) => {
                 if ctxt.extensions.gl_amd_depth_clamp_separate {
                     unsafe { ctxt.gl.Enable(gl::DEPTH_CLAMP_NEAR_AMD) };
+                    println!("DISABLE gl::DEPTH_CLAMP_FAR_AMD");
                     if *far { unsafe { ctxt.gl.Disable(gl::DEPTH_CLAMP_FAR_AMD); } }
                     *near = true;
                     *far = false;
@@ -223,6 +226,7 @@ pub fn sync_depth(ctxt: &mut CommandContext, depth: &Depth) -> Result<(), DrawEr
 
             (DepthClamp::ClampFar, near, &mut true) => {
                 if ctxt.extensions.gl_amd_depth_clamp_separate {
+                    println!("DISABLE gl::DEPTH_CLAMP_NEAR_AMD");
                     unsafe { ctxt.gl.Disable(gl::DEPTH_CLAMP_NEAR_AMD) };
                     *near = false;
                 } else {
@@ -233,6 +237,7 @@ pub fn sync_depth(ctxt: &mut CommandContext, depth: &Depth) -> Result<(), DrawEr
             (DepthClamp::ClampFar, near, far @ &mut false) => {
                 if ctxt.extensions.gl_amd_depth_clamp_separate {
                     unsafe { ctxt.gl.Enable(gl::DEPTH_CLAMP_FAR_AMD) };
+                    println!("DISABLE gl::DEPTH_CLAMP_NEAR_AMD");
                     if *near { unsafe { ctxt.gl.Disable(gl::DEPTH_CLAMP_NEAR_AMD); } }
                     *near = false;
                     *far = true;

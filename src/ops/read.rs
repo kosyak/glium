@@ -224,22 +224,27 @@ pub fn read<'a, S, D, T>(mut ctxt: &mut CommandContext, source: S, rect: &Rect, 
                 let ptr = buf.as_mut_ptr() as *mut D;
                 let ptr = ptr as usize;
                 if (ptr % 8) == 0 {
+                    let _ = dbg!((ctxt.state.pixel_store_pack_alignment, format, gltype, rect, pixels_to_read));
+                    // ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 1);
                 } else if (ptr % 4) == 0 && ctxt.state.pixel_store_pack_alignment != 4 {
                     ctxt.state.pixel_store_pack_alignment = 4;
-                    ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 4);
+                    dbg!(ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 4));
                 } else if (ptr % 2) == 0 && ctxt.state.pixel_store_pack_alignment > 2 {
                     ctxt.state.pixel_store_pack_alignment = 2;
-                    ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 2);
+                    dbg!(ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 2));
                 } else if ctxt.state.pixel_store_pack_alignment != 1 {
                     ctxt.state.pixel_store_pack_alignment = 1;
-                    ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 1);
+                    dbg!(ctxt.gl.PixelStorei(gl::PACK_ALIGNMENT, 1));
                 }
+
+                let _ = dbg!(ctxt.gl.GetError());
 
                 ctxt.gl.ReadPixels(rect.left as gl::types::GLint, rect.bottom as gl::types::GLint,
                                    rect.width as gl::types::GLsizei,
                                    rect.height as gl::types::GLsizei, format, gltype,
                                    buf.as_mut_ptr() as *mut _);
-                buf.set_len(pixels_to_read as usize);
+                let _ = dbg!(ctxt.gl.GetError());
+                buf.set_len(dbg!(pixels_to_read as usize));
 
                 *dest = buf;
             },

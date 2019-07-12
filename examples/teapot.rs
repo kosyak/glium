@@ -9,8 +9,11 @@ mod support;
 fn main() {
     // building the display, ie. the main object
     let mut events_loop = glutin::EventsLoop::new();
-    let wb = glutin::WindowBuilder::new();
-    let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
+    let wb = glutin::WindowBuilder::new()
+        .with_fullscreen(Some(events_loop.get_primary_monitor()));
+    let cb = glutin::ContextBuilder::new()
+        .with_depth_buffer(24)
+        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGlEs, (2, 0)));
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
     // building the vertex and index buffers
@@ -124,9 +127,9 @@ fn main() {
 
     //
     let mut camera = support::camera::CameraState::new();
-    
+
     // the main loop
-    support::start_loop(|| {
+    support::start_loop(&display, || {
         camera.update();
 
         // building the uniforms

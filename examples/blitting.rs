@@ -14,7 +14,7 @@ fn main() {
     // Building the display, ie. the main object
     let mut events_loop = glutin::EventsLoop::new();
     let wb = glutin::WindowBuilder::new();
-    let cb = glutin::ContextBuilder::new().with_vsync(true);
+    let cb = glutin::ContextBuilder::new().with_vsync(true).with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGlEs, (2, 0)));
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
     // building a texture with "OpenGL" drawn on it
@@ -25,14 +25,14 @@ fn main() {
     let opengl_texture = glium::Texture2d::new(&display, image).unwrap();
 
     // building a 1024x1024 empty texture
-    let dest_texture = glium::Texture2d::empty_with_format(&display,
-                                               glium::texture::UncompressedFloatFormat::U8U8U8U8,
+    let dest_texture = glium::Texture2d::empty(&display, 1024, 1024)/*glium::Texture2d::empty_with_format(&display,
+                                               glium::texture::UncompressedFloatFormat::U4U4U4U4,
                                                glium::texture::MipmapsOption::NoMipmap,
-                                               1024, 1024).unwrap();
+                                               1024, 1024)*/.unwrap();
     dest_texture.as_surface().clear_color(0.0, 0.0, 0.0, 1.0);
 
     // the main loop
-    support::start_loop(|| {
+    support::start_loop(&display, || {
         // we have one out of 60 chances to blit one `opengl_texture` over `dest_texture`
         if rand::random::<f64>() <= 0.016666 {
             let (left, bottom, dimensions): (f32, f32, f32) = rand::random();
@@ -49,6 +49,7 @@ fn main() {
 
         // drawing a frame
         let target = display.draw();
+        // TODO: https://stackoverflow.com/questions/25439137/alternative-for-glblitframebuffer-in-opengl-es-2-0
         dest_texture.as_surface().fill(&target, glium::uniforms::MagnifySamplerFilter::Linear);
         target.finish().unwrap();
 

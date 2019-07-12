@@ -7,11 +7,21 @@ mod support;
 use glium::{glutin, Surface};
 use glium::index::PrimitiveType;
 
+use glium::glutin::os::unix::WindowExt;
+
 fn main() {
     let mut events_loop = glutin::EventsLoop::new();
-    let wb = glutin::WindowBuilder::new();
-    let cb = glutin::ContextBuilder::new();
+    let wb = glutin::WindowBuilder::new()
+        .with_fullscreen(Some(events_loop.get_primary_monitor()));
+    let cb = glutin::ContextBuilder::new()
+        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGlEs, (2, 0)));
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
+
+    let windowed_context = display.gl_window();
+    let window = windowed_context.window();
+
+    windowed_context.swap_buffers().unwrap();
+    window.gbm_set_crtc();
 
     // building the vertex buffer, which contains all the vertices that we will draw
     let vertex_buffer = {
@@ -142,6 +152,8 @@ fn main() {
         target.clear_color(0.0, 0.0, 0.0, 0.0);
         target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
         target.finish().unwrap();
+
+        window.gbm_page_flip();
     };
 
     // Draw the triangle to the screen.

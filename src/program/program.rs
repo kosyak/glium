@@ -357,6 +357,7 @@ impl ProgramExt for Program {
         if self.uses_point_size && !ctxt.state.enabled_program_point_size {
             unsafe { ctxt.gl.Enable(gl::PROGRAM_POINT_SIZE); }
         } else if !self.uses_point_size && ctxt.state.enabled_program_point_size {
+            println!("DISABLE gl::PROGRAM_POINT_SIZE");
             unsafe { ctxt.gl.Disable(gl::PROGRAM_POINT_SIZE); }
         }
 
@@ -367,6 +368,7 @@ impl ProgramExt for Program {
                 ctxt.state.enabled_framebuffer_srgb = !self.outputs_srgb;
 
                 if self.outputs_srgb {
+                    println!("DISABLE gl::FRAMEBUFFER_SRGB");
                     unsafe { ctxt.gl.Disable(gl::FRAMEBUFFER_SRGB) };
                 } else {
                     unsafe { ctxt.gl.Enable(gl::FRAMEBUFFER_SRGB) };

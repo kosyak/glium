@@ -23,7 +23,7 @@ pub struct GlutinBackend(Rc<RefCell<Takeable<glutin::Context<Pc>>>>);
 
 impl Deref for Headless {
     type Target = context::Context;
-    fn deref(&self) -> &context::Context {
+    fn deref(&self) -> &Self::Target {
         &self.context
     }
 }

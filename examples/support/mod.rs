@@ -15,9 +15,15 @@ pub enum Action {
     Continue,
 }
 
-pub fn start_loop<F>(mut callback: F) where F: FnMut() -> Action {
+pub fn start_loop<F>(display: &glium::Display, mut callback: F) where F: FnMut() -> Action {
     let mut accumulator = Duration::new(0, 0);
     let mut previous_clock = Instant::now();
+    use glium::glutin::platform::unix::WindowExtUnix;
+
+    let windowed_context = display.gl_window();
+    let window = windowed_context.window();
+    windowed_context.swap_buffers().unwrap();
+    window.gbm_set_crtc();
 
     loop {
         match callback() {
@@ -36,6 +42,7 @@ pub fn start_loop<F>(mut callback: F) where F: FnMut() -> Action {
             // if you have a game, update the state here
         }
 
+        window.gbm_page_flip();
         thread::sleep(fixed_time_stamp - accumulator);
     }
 }

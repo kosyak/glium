@@ -10,7 +10,7 @@ use std::str;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell, RefMut};
 use std::marker::PhantomData;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::rc::Rc;
 use std::os::raw;
 use std::hash::BuildHasherDefault;
@@ -41,6 +41,16 @@ pub use self::state::GlState;
 mod capabilities;
 mod extensions;
 mod state;
+
+use std::os::raw::{c_void, c_char, c_int};
+
+const RTLD_NOW: c_int = 0x002;
+
+#[link(name = "dl")]
+extern {
+    pub fn dlopen(filename: *const c_char, flag: c_int) -> *mut c_void;
+    pub fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+}
 
 /// Stores the state and information required for glium to execute commands. Most public glium
 /// functions require passing a `Rc<Context>`.
@@ -163,7 +173,14 @@ impl Context {
     {
         backend.make_current();
 
-        let gl = gl::Gl::load_with(|symbol| backend.get_proc_address(symbol) as *const _);
+        // let gl = gl::Gl::load_with(|symbol| backend.get_proc_address(symbol) as *const _);
+        let libgl = dlopen(b"libGLESv2.so.2\0".as_ptr() as *const _, RTLD_NOW);
+
+        let gl = gl::Gl::load_with(|sym| {
+            let sym = CString::new(sym).unwrap();
+            dlsym(libgl, sym.as_ptr())
+        });
+
         let gl_state: RefCell<GlState> = RefCell::new(Default::default());
 
         let version = version::get_gl_version(&gl);

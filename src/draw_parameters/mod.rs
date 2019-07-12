@@ -386,11 +386,11 @@ pub struct DrawParameters<'a> {
     /// Since this is purely an optimization, this parameter is ignored if the backend doesn't
     /// support it.
     pub primitive_bounding_box: (Range<f32>, Range<f32>, Range<f32>, Range<f32>),
-    
-    /// If enabled, will split the index buffer (if any is used in the draw call) 
+
+    /// If enabled, will split the index buffer (if any is used in the draw call)
     /// at the MAX value of the IndexType (u8::MAX, u16::MAX or u32::MAX) and start a new primitive
-    /// of the same type ("primitive restarting"). Supported on > OpenGL 3.1 or OpenGL ES 3.0. 
-    /// If the backend does not support GL_PRIMITIVE_RESTART_FIXED_INDEX, an Error 
+    /// of the same type ("primitive restarting"). Supported on > OpenGL 3.1 or OpenGL ES 3.0.
+    /// If the backend does not support GL_PRIMITIVE_RESTART_FIXED_INDEX, an Error
     /// of type `FixedIndexRestartingNotSupported` will be returned.
     pub primitive_restart_index: bool,
 }
@@ -597,6 +597,10 @@ fn sync_polygon_mode(ctxt: &mut context::CommandContext, backface_culling: Backf
 
 fn sync_clip_planes_bitmask(ctxt: &mut context::CommandContext, clip_planes_bitmask: u32)
                             -> Result<(), DrawError> {
+    if ctxt.version < &Version(Api::GlEs, 3, 0) {
+        return Ok(());
+    }
+
     unsafe {
         #[allow(deprecated)]
         let mut max_clip_planes: gl::types::GLint = mem::uninitialized();
@@ -610,6 +614,7 @@ fn sync_clip_planes_bitmask(ctxt: &mut context::CommandContext, clip_planes_bitm
                 }
             } else {
                 if i < max_clip_planes {
+                    println!("DISABLE gl::CLIP_DISTANCE0 + {:?}", i);
                     ctxt.gl.Disable(gl::CLIP_DISTANCE0 + i as u32);
                 }
             }
@@ -625,6 +630,7 @@ fn sync_multisampling(ctxt: &mut context::CommandContext, multisampling: bool) {
                 ctxt.gl.Enable(gl::MULTISAMPLE);
                 ctxt.state.enabled_multisample = true;
             } else {
+                println!("DISABLE gl::MULTISAMPLE");
                 ctxt.gl.Disable(gl::MULTISAMPLE);
                 ctxt.state.enabled_multisample = false;
             }
@@ -713,6 +719,7 @@ fn sync_rasterizer_discard(ctxt: &mut context::CommandContext, draw_primitives: 
     if ctxt.state.enabled_rasterizer_discard == draw_primitives {
         if ctxt.version >= &Version(Api::Gl, 3, 0) {
             if draw_primitives {
+                println!("DISABLE gl::RASTERIZER_DISCARD");
                 unsafe { ctxt.gl.Disable(gl::RASTERIZER_DISCARD); }
                 ctxt.state.enabled_rasterizer_discard = false;
             } else {
@@ -722,6 +729,7 @@ fn sync_rasterizer_discard(ctxt: &mut context::CommandContext, draw_primitives: 
 
         } else if ctxt.extensions.gl_ext_transform_feedback {
             if draw_primitives {
+                println!("DISABLE gl::RASTERIZER_DISCARD_EXT");
                 unsafe { ctxt.gl.Disable(gl::RASTERIZER_DISCARD_EXT); }
                 ctxt.state.enabled_rasterizer_discard = false;
             } else {
@@ -849,6 +857,7 @@ fn sync_smooth(ctxt: &mut context::CommandContext,
             PrimitiveType::LineLoop => unsafe {
                 if ctxt.state.enabled_line_smooth {
                     ctxt.state.enabled_line_smooth = false;
+                    println!("DISABLE gl::LINE_SMOOTH");
                     ctxt.gl.Disable(gl::LINE_SMOOTH);
                 }
             },
@@ -857,6 +866,7 @@ fn sync_smooth(ctxt: &mut context::CommandContext,
             _ => unsafe {
                 if ctxt.state.enabled_polygon_smooth {
                     ctxt.state.enabled_polygon_smooth = false;
+                    println!("DISABLE gl::POLYGON_SMOOTH");
                     ctxt.gl.Disable(gl::POLYGON_SMOOTH);
                 }
             }
@@ -929,7 +939,7 @@ fn sync_primitive_restart_index(ctxt: &mut context::CommandContext,
                                 enabled: bool)
                                 -> Result<(), DrawError>
 {
-    // TODO: use GL_PRIMITIVE_RESTART (if possible) if 
+    // TODO: use GL_PRIMITIVE_RESTART (if possible) if
     // GL_PRIMITIVE_RESTART_FIXED_INDEX is not supported
     if ctxt.version >= &Version(Api::Gl, 3, 1)   || ctxt.version >= &Version(Api::GlEs, 3, 0) ||
     ctxt.extensions.gl_arb_es3_compatibility
@@ -938,6 +948,7 @@ fn sync_primitive_restart_index(ctxt: &mut context::CommandContext,
             unsafe { ctxt.gl.Enable(gl::PRIMITIVE_RESTART_FIXED_INDEX); }
             ctxt.state.enabled_primitive_fixed_restart = true;
         } else {
+            println!("DISABLE gl::PRIMITIVE_RESTART_FIXED_INDEX");
             unsafe { ctxt.gl.Disable(gl::PRIMITIVE_RESTART_FIXED_INDEX); }
             ctxt.state.enabled_primitive_fixed_restart = false;
         }
@@ -947,7 +958,7 @@ fn sync_primitive_restart_index(ctxt: &mut context::CommandContext,
             return Err(DrawError::FixedIndexRestartingNotSupported);
         }
     }
-    
+
 
     Ok(())
 }

@@ -830,7 +830,9 @@ impl FramebuffersContainer {
                                                 read_buffer: gl::types::GLenum)
     {
         unsafe { bind_framebuffer(ctxt, 0, false, true) };
-        unsafe { ctxt.gl.ReadBuffer(read_buffer) };     // TODO: cache
+        if ctxt.version >= &Version(Api::GlEs, 3, 0) || ctxt.version >= &Version(Api::Gl, 2, 0) {
+            unsafe { ctxt.gl.ReadBuffer(read_buffer) };     // TODO: cache
+        }
     }
 
     /// Binds a framebuffer to `GL_READ_FRAMEBUFFER` or `GL_FRAMEBUFFER` so that it becomes the
@@ -857,7 +859,9 @@ impl FramebuffersContainer {
 
         let framebuffer = FramebuffersContainer::get_framebuffer_for_drawing(ctxt, Some(&attachments));
         bind_framebuffer(ctxt, framebuffer, false, true);
-        ctxt.gl.ReadBuffer(gl::COLOR_ATTACHMENT0);     // TODO: cache
+        if ctxt.version >= &Version(Api::GlEs, 3, 0) || ctxt.version >= &Version(Api::Gl, 2, 0) {
+            ctxt.gl.ReadBuffer(gl::COLOR_ATTACHMENT0);     // TODO: cache
+        }
     }
 
     /// Calls `glClearBuffer` on a framebuffer that contains the attachment.

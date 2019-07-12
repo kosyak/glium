@@ -419,7 +419,7 @@ fn bind_uniform<P>(ctxt: &mut context::CommandContext,
             bind_texture_uniform(ctxt, &**texture, sampler, location, program, texture_bind_points)
         },
         UniformValue::Texture2d(texture, sampler) => {
-            bind_texture_uniform(ctxt, &**texture, sampler, location, program, texture_bind_points)
+            bind_texture_uniform(ctxt, &**texture, None, location, program, texture_bind_points)
         },
         UniformValue::CompressedTexture2d(texture, sampler) => {
             bind_texture_uniform(ctxt, &**texture, sampler, location, program, texture_bind_points)

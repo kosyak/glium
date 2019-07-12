@@ -5,13 +5,23 @@ extern crate image;
 #[allow(unused_imports)]
 use glium::{glutin, Surface};
 use glium::index::PrimitiveType;
+use glium::glutin::os::unix::WindowExt;
 
 fn main() {
     // building the display, ie. the main object
     let events_loop = glutin::EventsLoop::new();
-    let wb = glutin::WindowBuilder::new().with_visibility(false);
-    let cb = glutin::ContextBuilder::new();
+    let wb = glutin::WindowBuilder::new()
+        .with_visibility(false)
+        .with_fullscreen(Some(events_loop.get_primary_monitor()));
+    let cb = glutin::ContextBuilder::new()
+        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGlEs, (2, 0)));
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
+
+    let windowed_context = display.gl_window();
+    let window = windowed_context.window();
+
+    windowed_context.swap_buffers().unwrap();
+    window.gbm_set_crtc();
 
     // building the vertex buffer, which contains all the vertices that we will draw
     let vertex_buffer = {
@@ -23,7 +33,7 @@ fn main() {
 
         implement_vertex!(Vertex, position, color);
 
-        glium::VertexBuffer::new(&display, 
+        glium::VertexBuffer::new(&display,
             &[
                 Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
                 Vertex { position: [ 0.0,  0.5], color: [0.0, 0.0, 1.0] },
@@ -66,7 +76,7 @@ fn main() {
             "
         },
 
-        110 => {  
+        110 => {
             vertex: "
                 #version 110
 
@@ -92,6 +102,35 @@ fn main() {
                 }
             ",
         },
+
+        100 => {
+            vertex: "
+                #version 100
+
+                precision mediump float;
+                uniform mat4 matrix;
+
+                attribute vec2 position;
+                attribute vec3 color;
+
+                varying vec3 vColor;
+
+                void main() {
+                    gl_Position = vec4(position, 0.0, 1.0) * matrix;
+                    vColor = color;
+                }
+            ",
+
+            fragment: "
+                #version 100
+                precision mediump float;
+                varying vec3 vColor;
+
+                void main() {
+                    gl_FragColor = vec4(vColor, 1.0);
+                }
+            ",
+        },
     ).unwrap();
 
     // drawing once
@@ -108,9 +147,11 @@ fn main() {
 
     // drawing a frame
     let mut target = display.draw();
-    target.clear_color(0.0, 0.0, 0.0, 0.0);
+    target.clear_color(1.0, 0.5, 0.0, 0.5);
     target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
     target.finish().unwrap();
+
+    window.gbm_page_flip();
 
     // reading the front buffer into an image
     let image: glium::texture::RawImage2d<u8> = display.read_front_buffer().unwrap();

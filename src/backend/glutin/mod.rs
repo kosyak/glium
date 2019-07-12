@@ -25,7 +25,7 @@ use std::fmt;
 use std::rc::Rc;
 use std::ops::Deref;
 use std::os::raw::c_void;
-use glutin::{PossiblyCurrent as Pc, ContextCurrentState};
+use glutin::{PossiblyCurrent as Pc, ContextCurrentState, event_loop::EventLoop, window::WindowBuilder};
 
 /// A GL context combined with a facade for drawing upon.
 ///
@@ -61,13 +61,13 @@ impl Display {
     ///
     /// Performs a compatibility check to make sure that all core elements of glium are supported
     /// by the implementation.
-    pub fn new<T: ContextCurrentState>(
-        wb: glutin::WindowBuilder,
+    pub fn new<T: ContextCurrentState, R>(
+        wb: WindowBuilder,
         cb: glutin::ContextBuilder<T>,
-        events_loop: &glutin::EventsLoop,
+        event_loop: &EventLoop<R>,
     ) -> Result<Self, DisplayCreationError>
     {
-        let gl_window = cb.build_windowed(wb, events_loop)?;
+        let gl_window = cb.build_windowed(wb, event_loop)?;
         Self::from_gl_window(gl_window).map_err(From::from)
     }
 
@@ -129,20 +129,21 @@ impl Display {
     /// original `WindowedContext`'s `Context`.
     pub fn rebuild<T: ContextCurrentState>(
         &self,
-        wb: glutin::WindowBuilder,
+        wb: WindowBuilder,
         cb: glutin::ContextBuilder<T>,
-        events_loop: &glutin::EventsLoop,
+        event_loop: &EventLoop<T>,
     ) -> Result<(), DisplayCreationError>
     {
         // Share the display lists of the existing context.
         let new_gl_window = {
             let gl_window = self.gl_window.borrow();
             let cb = cb.with_shared_lists(gl_window.context());
-            cb.build_windowed(wb, events_loop)?
+            cb.build_windowed(wb, event_loop)?
         };
         let new_gl_window = unsafe {
             new_gl_window.treat_as_current()
         };
+        let new_gl_window = unsafe { new_gl_window.treat_as_current() };
 
         // Replace the stored WindowedContext with the new one.
         {
@@ -267,12 +268,7 @@ unsafe impl Backend for GlutinBackend {
     fn get_framebuffer_dimensions(&self) -> (u32, u32) {
         let gl_window_takeable = self.borrow();
         let gl_window = gl_window_takeable.window();
-        let (width, height) = gl_window.get_inner_size()
-            .map(|logical_size| logical_size.to_physical(gl_window.get_hidpi_factor()))
-            .map(Into::into)
-            // TODO: 800x600 ?
-            .unwrap_or((800, 600));
-        (width, height)
+        gl_window.inner_size().to_physical(gl_window.hidpi_factor()).into()
     }
 
     #[inline]
